@@ -1,0 +1,10 @@
+scapy==2.5.0
+flask==3.0.3
+flask-socketio==5.3.0
+python-engineio==4.8.0
+python-socketio==5.11.1
+Werkzeug==3.0.3
+gunicorn==22.0.0
+gevent==24.2.1          # Replaced eventlet with gevent
+gevent-websocket==0.10.1 # Added for gevent compatibility with Flask-SocketIO
+setuptools==69.5.1
