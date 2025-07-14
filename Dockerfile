@@ -1,20 +1,15 @@
-# Use an official Python runtime as a parent image
-FROM python:3.9-slim-buster
+# Use an official Nginx image
+FROM nginx:alpine
 
-# Set the working directory in the container
-WORKDIR /app
+# Copy your HTML file(s) to the Nginx web root
+# Assuming i.html is in a 'public' folder next to your Dockerfile
+COPY public/i.html /usr/share/nginx/html/
 
-# Copy the requirements file into the working directory
-COPY requirements.txt .
+# Or if i.html is directly in the same folder as your Dockerfile
+# COPY i.html /usr/share/nginx/html/
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Expose port 80
+EXPOSE 80
 
-# Copy the rest of the application code into the working directory
-COPY . .
-
-# Make port 5000 available to the world outside this container
-EXPOSE 5000
-
-# Run the application
-CMD ["python", "app.py"]
+# Command to run Nginx (default for nginx image)
+CMD ["nginx", "-g", "daemon off;"]
